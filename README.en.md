@@ -169,18 +169,17 @@ A contradiction is a place where the model disagrees with itself. The engine col
 "Is there such a history" (`exists`) being false is not counted as a contradiction; it is only the answer that there is no such possibility. What could not be decided because the search limit was passed is written separately as `UNKNOWN`. The engine says it does not know rather than give a wrong answer.
 
 ```mermaid
-flowchart LR
-    A["model text .fean"] --> B["parsing"]
-    B --> C["expansion of templates and parameters"]
-    C --> D["type and structure checks"]
-    D --> E["lowering"]
-    E --> F["image .feanc"]
-    F --> G["enumeration of histories"]
-    G --> H["views and knowledge"]
-    H --> I["evaluation of queries"]
-    I --> J["answers · evidence · contradictions"]
-    G -.-> K["solver"]
-    K -.-> I
+flowchart TB
+    subgraph compile["Before running: compilation"]
+        direction LR
+        A["model text .fean"] --> B["parsing"] --> C["expansion of templates and parameters"] --> D["type and structure checks"] --> E["lowering"] --> F["image .feanc"]
+    end
+    subgraph run["Running"]
+        direction LR
+        G["enumeration of histories"] --> H["views and knowledge"] --> I["evaluation of queries"] --> J["answers · evidence · contradictions"]
+        G -.-> K["solver"] -.-> I
+    end
+    compile --> run
 ```
 
 ### 1. Filter before running
@@ -196,7 +195,7 @@ The machine runs the program of the image one step at a time. Histories part whe
 The post-states a commit U can reach from a pre-state s are the set below.
 
 ```math
-\operatorname{Next}_U(s)=\{\,s' \mid \operatorname{Pre}_U(s)\land\operatorname{Fund}_U(s)\land R_U(s,s')\land\operatorname{Range}(s')\land\operatorname{Inv}(s')\land\operatorname{Post}_U(s,s')\,\}
+\mathrm{Next}_U(s)=\{\,s' \mid \mathrm{Pre}_U(s)\land\mathrm{Fund}_U(s)\land R_U(s,s')\land\mathrm{Range}(s')\land\mathrm{Inv}(s')\land\mathrm{Post}_U(s,s')\,\}
 ```
 
 If the conditions and authorities (Pre) or the funds (Fund) are false, the verdict is `BLOCKED`. Otherwise the cells left undetermined (`free`) are enumerated over their ranges to make candidates, and only those that satisfy the ranges (Range), the invariants (Inv) and the postconditions (Post) together are kept. If none is left, the verdict is `NO_SETTLEMENT`: the clauses cannot hold together. The `aidAfter` of the example above is this case.

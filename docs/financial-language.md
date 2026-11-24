@@ -164,9 +164,9 @@ QName    = Name { "." Name } ;
 
 ### 2.1 타입
 
-$$
-\tau ::= \texttt{Bool}\mid\texttt{Time}\mid\texttt{Actor}\mid E\mid\texttt{Qty}[u]\mid\tau?
-$$
+```math
+\tau ::= \mathtt{Bool}\mid\mathtt{Time}\mid\mathtt{Actor}\mid E\mid\mathtt{Qty}[u]\mid\tau?
+```
 
 - `Qty[u]`는 단위 u의 정수 수량이다. 단위는 선언된 자산의 곱과 몫이며 `Qty[KRW]`와 `Qty[share]`는 다른 타입이다. `Num`은 단위 없는 정수다. 식의 값은 부호를 가질 수 있고, 범위는 셀의 제약이다. 상·하한을 넘긴 값의 자동 반올림이나 포화 처리는 없다.
 - `E`는 `enum`으로 선언한 열거형, `Time`은 `time lo..hi`로 선언한 공개 시각, `Actor`는 선언된 구성원이다.
@@ -296,10 +296,10 @@ T는 `cheap`을 관찰하지 못한다. 싼 세계에서 2주를 사는 이력�
 
 커밋 단위 U는 사건 하나 또는 선언된 묶음이다. 묶음의 사건들은 모두 같은 전상태 s와 같은 후상태 s′를 본다.
 
-$$
-\operatorname{Next}_U(s)=\{s'\mid \operatorname{Pre}_U(s)\land\operatorname{Fund}_U(s)\land R_U(s,s')
-\land\operatorname{Range}(s')\land\operatorname{Inv}(s')\land\operatorname{Post}_U(s,s')\}.
-$$
+```math
+\mathrm{Next}_U(s)=\{s'\mid \mathrm{Pre}_U(s)\land\mathrm{Fund}_U(s)\land R_U(s,s')
+\land\mathrm{Range}(s')\land\mathrm{Inv}(s')\land\mathrm{Post}_U(s,s')\}.
+```
 
 1. **결속과 조건.** 사건마다 절을 적힌 순서로 읽는다. `let`과 `given`은 전상태의 값을 이름에 묶고, `given`의 값이 비어 있거나 `auth`·`require`가 거짓이면 멈춘다. 이것이 Pre다.
 2. **흐름 계산.** 효과의 우변은 모두 전상태에서 평가한다. `:=`는 대입, `+=`·`-=`는 부호 있는 증감, `move a -> b : n`은 두 보유량에 −n과 +n, `free`는 선언된 범위의 모든 값, `tell`·`forget`은 지정한 슬롯이다. 이 목록이 R이다. 쓰지 않은 셀과 슬롯은 전상태 값을 보존한다.
@@ -421,10 +421,10 @@ W-Menu 덕분에 한 이력은 같은 이름의 지점을 많아야 한 번 지�
 
 **관찰.** 셀의 `observe`에 적힌 구성원은 그 셀의 현재 값을 언제나 본다. `observe all`은 모두에게 공개한다. 자기 보유량 `bal(i, x)`는 선언하지 않아도 본인이 본다. `asset x … observe all`이면 그 자산의 모든 보유량이 공개된다. 공용 원장의 모든 행, 비공개 분기의 이름, 걸음의 번호는 누구의 시야에도 자동으로 들어가지 않는다.
 
-$$
-\operatorname{view}_i(p)=\bigl(t,\ d_i(p),\ \mu_i,\ \sigma|_{\operatorname{Obs}(i)}\bigr),\qquad
-p\sim_i q\iff\operatorname{view}_i(p)=\operatorname{view}_i(q).
-$$
+```math
+\mathrm{view}_i(p)=\bigl(t,\ d_i(p),\ \mu_i,\ \sigma|_{\mathrm{Obs}(i)}\bigr),\qquad
+p\sim_i q\iff\mathrm{view}_i(p)=\mathrm{view}_i(q).
+```
 
 t는 공개 시각이다. `dᵢ(p)`는 p가 `show(i, m, 행동들)`으로 끝나면 그 메뉴 이름과 행동 목록이고 아니면 빈 값이다. 그래서 메뉴 자체가 주는 정보도 계산된다. μᵢ는 i의 슬롯들, 마지막은 i가 관찰하는 셀들의 현재 값이다. 규칙·타입·가능 세계의 범위·`param`은 공통으로 주어진다. 규칙을 일부만 아는 사례는 적용 규칙의 판을 셀에 두고 그 공지를 받은 사람에게만 전달한다.
 
@@ -436,10 +436,10 @@ t는 공개 시각이다. `dᵢ(p)`는 p가 `show(i, m, 행동들)`으로 끝나
 
 **전략 실현.** W-Menu를 지킨 모델에서는 한 이력에서 같은 주체가 같은 시야로 두 번 선택하는 일이 없다. 선택 지점마다 메뉴 이름이 다르기 때문이다. 따라서 모든 완결 이력은 어떤 시야 기반 결정론적 전략들로 실현되고, `H_M`은 정보 제약을 지키는 모든 전략과 허용된 모든 가지에서 나오는 접두부의 집합과 같다. 특정 정책이나 분석 목표에 유리한 미래만 남기기 전의 집합이다.
 
-$$
+```math
 I_i(p)=\{q\in H_M\mid p\sim_i q\},\qquad
 M,p\models K(i,\varphi)\iff\forall q\in I_i(p),\ M,q\models\varphi.
-$$
+```
 
 p 자신도 `Iᵢ(p)`에 들어가므로 아는 것은 참이다. 같은 실제 세계라도 수신 순서가 다르면 다른 지점이다.
 
@@ -899,3 +899,4 @@ model Escrow {
 - 2026-11-23 · v0.3. 미지수 `unknown`과 역산 질의 `solve`, 목표층 V와 X, 규칙 `Q-Solve`, 사례에서의 일반 질의, 예제 `Capital`과 `Escrow`를 더했다.
 - 2026-11-23 · T-Name과 T-Call에 `def`의 몸과 질의 이름의 관계를 밝혔다. 질의와 미지수가 같은 이름을 쓸 때 `def`의 몸에서는 미지수다.
 - 2026-11-24 · 저장소에 싣지 않는 결정 기록으로 가는 링크를 뺐다. 내용은 바꾸지 않았다.
+- 2026-11-24 · 수식을 GitHub이 그리는 `math` 블록으로 옮기고 이름의 표기를 `\mathrm`·`\mathtt`로 바꿨다. 식의 뜻은 바꾸지 않았다.

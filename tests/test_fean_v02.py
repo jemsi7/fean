@@ -560,6 +560,13 @@ class TestDocument(Case):
         self.assertEqual(len(rules), 42)
         mine = Path(__file__).read_text(encoding='utf-8')
         self.assertEqual({r for r in rules if f"'{r}'" not in mine}, set())
+        # formulas are written the way GitHub renders them: in fenced math blocks (inside `$$` it drops the
+        # backslash of a brace) and without \operatorname (which it does not allow)
+        for path in (DOC, DOC.with_name('financial-language-v0.1.md'), ROOT / 'README.md', ROOT / 'README.en.md'):
+            text = path.read_text(encoding='utf-8')
+            self.assertNotIn('\\operatorname', text, path.name)
+            self.assertEqual([line for line in text.splitlines() if line.strip() == '$$'], [], path.name)
+        self.assertEqual(len(doc_blocks(DOC, 'math')), 4)
         # the design records are kept outside the repository; where they are present, they and the test
         # files name the same tests
         defined = set()

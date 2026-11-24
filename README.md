@@ -169,18 +169,17 @@ FEAN의 판정은 아래의 전제와 공리 위에 서 있습니다. 전제는 
 ‘그런 이력이 있는가’(`exists`)가 거짓인 것은 모순으로 치지 않습니다. 가능성이 없다는 답일 뿐입니다. 탐색 한도를 넘어 판정하지 못한 것은 `UNKNOWN`으로 따로 적습니다. 틀린 답을 내는 대신 모른다고 합니다.
 
 ```mermaid
-flowchart LR
-    A["모델 글 .fean"] --> B["구문 분석"]
-    B --> C["틀과 매개변수의 전개"]
-    C --> D["타입·구조 검사"]
-    D --> E["하강"]
-    E --> F["이미지 .feanc"]
-    F --> G["이력의 열거"]
-    G --> H["시야와 지식"]
-    H --> I["질의의 평가"]
-    I --> J["답 · 근거 · 모순"]
-    G -.-> K["역산 솔버"]
-    K -.-> I
+flowchart TB
+    subgraph compile["실행 전: 컴파일"]
+        direction LR
+        A["모델 글 .fean"] --> B["구문 분석"] --> C["틀과 매개변수의 전개"] --> D["타입·구조 검사"] --> E["하강"] --> F["이미지 .feanc"]
+    end
+    subgraph run["실행"]
+        direction LR
+        G["이력의 열거"] --> H["시야와 지식"] --> I["질의의 평가"] --> J["답 · 근거 · 모순"]
+        G -.-> K["역산 솔버"] -.-> I
+    end
+    compile --> run
 ```
 
 ### 1. 실행 전에 거른다
@@ -196,7 +195,7 @@ flowchart LR
 한 커밋 U가 전상태 s에서 갈 수 있는 후상태는 아래의 집합입니다.
 
 ```math
-\operatorname{Next}_U(s)=\{\,s' \mid \operatorname{Pre}_U(s)\land\operatorname{Fund}_U(s)\land R_U(s,s')\land\operatorname{Range}(s')\land\operatorname{Inv}(s')\land\operatorname{Post}_U(s,s')\,\}
+\mathrm{Next}_U(s)=\{\,s' \mid \mathrm{Pre}_U(s)\land\mathrm{Fund}_U(s)\land R_U(s,s')\land\mathrm{Range}(s')\land\mathrm{Inv}(s')\land\mathrm{Post}_U(s,s')\,\}
 ```
 
 조건과 권한(Pre), 재원(Fund)이 거짓이면 `BLOCKED`입니다. 통과하면 값을 정하지 않은 셀(`free`)을 범위에서 열거해 후보를 만들고, 범위(Range)와 불변식(Inv)과 사후조건(Post)을 함께 만족하는 것만 남깁니다. 하나도 남지 않으면 `NO_SETTLEMENT`입니다. 조항들이 함께 성립할 수 없다는 판정이고, 위 예제의 `aidAfter`가 이 경우입니다.

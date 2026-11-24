@@ -1533,7 +1533,6 @@ class TestManual(unittest.TestCase):
         from pypdf import PdfReader
         source_path, pdf_path = MANUAL / 'manual.html', MANUAL / 'FEAN-IDE-설명서.pdf'
         self.assertTrue(pdf_path.exists())
-        self.assertGreaterEqual(pdf_path.stat().st_mtime, source_path.stat().st_mtime)     # printed from this source
         source = source_path.read_text(encoding='utf-8')
         figures = re.findall(r'<img src="(img/[^"]+)"', source)
         self.assertGreaterEqual(len(figures), 20)
@@ -1549,6 +1548,15 @@ class TestManual(unittest.TestCase):
         self.assertEqual([c for c in text if ord(c) < 32 and c not in '\n\r\t'], [])        # real spaces, real text
         printed = squeeze(text)
         self.assertGreater(len(printed), 12_000)
+        # printed from this source: every block of text of the source is in the PDF, spacing aside. The times
+        # of the two files cannot say so, because a checkout gives every file the time of the checkout.
+        import html
+        body = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', source[source.index('<body'):], flags=re.S)
+        blocks = [squeeze(html.unescape(re.sub(r'<[^>]+>', '', inner)))
+                  for _, inner in re.findall(r'<(p|li|td|th|h1|h2|h3|h4|figcaption|pre)\b[^>]*>(.*?)</\1>', body, flags=re.S)]
+        blocks = [block for block in blocks if len(block) >= 12]
+        self.assertGreater(len(blocks), 300)
+        self.assertEqual([block[:60] for block in blocks if block not in printed], [])
         for title in ['FEAN IDE 설명서'] + CHAPTERS:
             self.assertIn(squeeze(title), printed, title)
         starts = [n for n, page in enumerate(reader.pages)                                  # each chapter opens a page

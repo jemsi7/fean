@@ -77,17 +77,17 @@ query     = POSSIBLE(form) | ALL(form) | CAN({i,…},form)
 
 `viewᵢ(p) = (공개 시각, i에게 표시된 선택 문맥, μᵢ)`로 둔다. 선택 문맥은 실제로 표시된 메뉴 ID와 행동 목록이며, 메뉴가 없으면 빈 값이다. 따라서 메뉴 자체가 주는 정보도 계산된다. 규칙·타입·가능 세계의 범위는 이 모형에서 공통으로 주어진다. 규칙 자체를 일부만 아는 사례는 적용 규칙의 버전을 세계 셀에 두고, 그 공지를 받은 사람에게만 전달한다.
 
-$$
-p \sim_i q \iff \operatorname{view}_i(p)=\operatorname{view}_i(q),\qquad
+```math
+p \sim_i q \iff \mathrm{view}_i(p)=\mathrm{view}_i(q),\qquad
 I_i(p)=\{q\in H_M\mid p\sim_i q\}.
-$$
+```
 
 `H_M`은 선언된 초기 세계에서 모든 정보 제약 준수 전략과 허용 스케줄로 얻는 이력들의 접두부 집합이다. 특정 정책·분석 목표에 유리한 미래만 남기기 **전**의 집합을 쓴다. 어떤 전략이 정보 제약을 지키는지는 원시 수신 기록으로 알아낼 수 있어 지식 술어 자체를 먼저 계산할 필요가 없다. 관찰 지점 p 자신도 Iᵢ(p)에 들어간다. 동일한 실제 세계라도 수신 순서가 달라지면 다른 지점이 된다.
 
-$$
+```math
 M,p\models K(i,\varphi)
 \iff \forall q\in I_i(p),\ M,q\models\varphi.
-$$
+```
 
 | 질의 | 의미 |
 |---|---|
@@ -110,11 +110,11 @@ $$
 
 하나의 사건 e에 대해 `authority`는 현재 누가 무엇을 바꿀 수 있는지, `require`는 실행 전에 만족할 조건, `ensure`는 실행 전후 상태에 걸친 조건이다. 선언한 작성 범위를 벗어나는 쓰기, 불명 참조, 거꾸로 가는 공개 시간, 허용 목록 B에 없는 공동 결제는 모델 오류다.
 
-$$
-\operatorname{Next}_e(s)=
-\{s'\mid \operatorname{Auth}_e(s)\land \operatorname{Pre}_e(s)
-\land R_e(s,s')\land\operatorname{Post}_e(s,s')\land\operatorname{Inv}(s')\}.
-$$
+```math
+\mathrm{Next}_e(s)=
+\{s'\mid \mathrm{Auth}_e(s)\land \mathrm{Pre}_e(s)
+\land R_e(s,s')\land\mathrm{Post}_e(s,s')\land\mathrm{Inv}(s')\}.
+```
 
 1. **읽기.** 권한·전제·효과의 우변은 모두 같은 전상태 s에서 평가한다. 권한이나 전제가 거짓이면 `BLOCKED`다.
 2. **후상태 후보 생성.** `set`은 지정 셀을 대입하고, `delta`는 부호 있는 증감을 모아 전상태의 값에 합산한다. `move(i,j,x,n)`는 같은 단위의 n≥0을 두 보유량에 −n,+n으로 반영한다. 순수 이전의 전체 수량 변화는 0이다. `free(c)`는 c의 선언된 유한 범위에서 후보를 열거한다. `tell`과 `forget`은 지정 수신자의 지정 슬롯에만 적용한다. 이 목록이 Rₑ다. 쓰지 않은 세계 셀과 기억 슬롯은 전상태 값을 보존한다.
@@ -231,3 +231,4 @@ early의 증인 정책은 ‘report가 호황이면 A, 불황이면 B’다. lat
 - 2026-11-22 · v0.1 초안. 구성원별 인지, 원자적 결제, 정보에 맞는 전략과 80원 상환 사례를 정의했다.
 - 2026-11-22 · 정보 제약이 적용되는 행동 인수와 판정 범위를 명료화했다.
 - 2026-11-24 · 저장소에 싣지 않는 결정 기록으로 가는 링크를 뺐다. 내용은 바꾸지 않았다.
+- 2026-11-24 · 수식을 GitHub이 그리는 `math` 블록으로 옮기고 이름의 표기를 `\mathrm`·`\mathtt`로 바꿨다. 식의 뜻은 바꾸지 않았다.
