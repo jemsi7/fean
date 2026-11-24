@@ -1,0 +1,19 @@
+model MutualDebt {
+  actor Ann, Bob
+  asset KRW in 0..100
+  time 0..0
+
+  event payAB by Ann { move Ann -> Bob : 100[KRW] }
+  event payBA by Bob { move Bob -> Ann : 100[KRW] }
+  batch gross  = { payAB, payBA }
+  batch netted = net { payAB, payBA }
+
+  program {
+    attempt batch gross  { label grossDone } else { label grossRefused }
+    attempt batch netted { label netDone }   else { label netRefused }
+  }
+
+  query grossBlocked = forall run: reach(grossRefused)                                        // => true
+  query netSettles   = forall run: reach(netDone)                                             // => true
+  query unchanged    = forall run: at(end, bal(Ann, KRW) == 0[KRW] and bal(Bob, KRW) == 0[KRW]) // => true
+}

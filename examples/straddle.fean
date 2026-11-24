@@ -1,0 +1,20 @@
+model Straddle {
+  actor H, W, C
+  asset KRW in 0..200 init W = 200
+  time 0..1
+  param S : Num in 0..200
+  cell debt : Qty[KRW] in 0..10 init 10 write repay observe H, C
+
+  def payoff() : Qty[KRW] = (if S <= 100 then 100 - S else S - 100) * 1[KRW]
+
+  event settle by W { move W -> H : payoff() }
+  event repay by H {
+    let b = min(bal(H, KRW), debt)
+    move H -> C : b
+    debt -= b
+  }
+
+  program { run settle  run repay }
+
+  query safe = region S: forall run: at(end, debt == 0[KRW])   // => {0..90, 110..200}
+}

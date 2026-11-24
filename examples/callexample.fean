@@ -1,0 +1,20 @@
+model CallExample {
+  actor H, W
+  asset KRW   in 0..105 init H = 105
+  asset share in 0..1   init W = 1
+  time 0..3
+
+  instance call = Call(H, W, share, 1[share], KRW, 100[KRW], 5[KRW], @1, @2)
+
+  program {
+    at @0 { run batch call.open }
+    at @1 { do call.decide() }
+    at @3 { attempt call.right.lapse { } }
+  }
+
+  query exercised   = exists run: at(end, bal(W, KRW) == 105[KRW] and bal(H, share) == 1[share])   // => true
+  query passed      = exists run: at(end, bal(H, KRW) == 100[KRW] and call.right.state == lapsed)  // => true
+  query premiumKept = forall run: at(end, bal(W, KRW) >= 5[KRW])                                   // => true
+  query holderCan   = can {H}: at(end, bal(H, share) == 1[share])                                  // => true
+  query writerCan   = can {W}: at(end, bal(W, share) == 1[share])                                  // => false
+}

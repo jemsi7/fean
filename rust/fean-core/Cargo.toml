@@ -1,0 +1,16 @@
+[package]
+name = "fean-core"
+version.workspace = true
+edition.workspace = true
+description = "FEAN engine: compiler, image and machine"
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+
+[lib]
+name = "fean_core"
+path = "src/lib.rs"
+
+[dependencies]
+serde_json = "1"

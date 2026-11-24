@@ -1,0 +1,67 @@
+model Repay80 {
+  actor D, L, I, J
+  asset KRW in 0..100 init I = 100
+  enum Regime { boom, slump }
+  enum Pick   { none, A, B }
+  time 0..4
+  param early : Bool
+
+  cell regime   : Regime            init in { boom, slump }
+  cell selected : Pick              init none   write elect
+  cell proof    : Regime?           init empty  write certify  observe I
+  cell remain   : Qty[KRW] in 0..80 init 80     write collect  observe D, L
+  cell life     : Life              init active write collect  observe D, L
+
+  slot report    : Regime for D, J
+  slot ownChoice : Pick   for D
+
+  event audit by J { tell J.report := regime asof @0 }
+  event notice(when : Bool) by J {
+    require early == when
+    given r = mem(J, report)
+    given u = asof(J, report)
+    tell D.report := r asof u
+  }
+  event elect(a : Pick) by D {
+    require selected == none
+    selected := a
+    tell D.ownChoice := a asof now
+  }
+  event certify by J { given r = mem(J, report)  proof := r }
+  event award by I {
+    require selected != none
+    given e = proof
+    let n = if (selected == A and e == boom) or (selected == B and e == slump) then 100[KRW] else 0[KRW]
+    move I -> D : n
+  }
+  event collect by D {
+    require life == active
+    let b = min(bal(D, KRW), remain)
+    move D -> L : b
+    remain -= b
+    life := if b == remain then settled else active
+  }
+
+  program {
+    at @0 { run audit }
+    at @1 { attempt notice(true) { } }
+    at @2 { choose D menu claimMenu { A => { run elect(A) }  B => { run elect(B) } } }
+    at @3 { attempt notice(false) { }  run certify  run award  label funded }
+    at @4 { run collect }
+  }
+
+  weight prior = 1
+  value cash = at(funded, bal(D, KRW)) ?? 0[KRW]
+  value paid = if at(end, remain == 0[KRW]) then 1 else 0
+
+  query possible = POSSIBLE(remain == 0[KRW])               // => {early=false: true, early=true: true}
+  query always   = ALL(remain == 0[KRW])                    // => {early=false: false, early=true: false}
+  query canD     = region early: CAN({D}, remain == 0[KRW]) // => {true}
+  query knowsD   = region early: forall run: at(menu(claimMenu), K(D, regime == boom) or K(D, regime == slump))  // => {true}
+  query knowsJ   = region early: forall run: at(menu(claimMenu), K(J, regime == boom) or K(J, regime == slump))  // => {false, true}
+  query knowsL   = region early: forall run: at(menu(claimMenu), K(L, regime == boom) or K(L, regime == slump))  // => {}
+  query laterD   = forall run: at(funded, K(D, regime == boom) or K(D, regime == slump))  // => {early=false: true, early=true: true}
+  query creditor = forall run: at(end, K(L, remain == 0[KRW]) or K(L, remain != 0[KRW]))  // => {early=false: true, early=true: true}
+  query worst    = max policy {D}: min run: cash               // => {early=false: 0[KRW], early=true: 100[KRW]}
+  query chance   = max policy {D}: expect prior: min run: paid // => {early=false: 1/2, early=true: 1}
+}

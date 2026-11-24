@@ -1,0 +1,32 @@
+model Workout {
+  actor Senior, Junior, Firm
+  asset KRW in 0..80
+  time 0..1
+  param pn : Num in 0..60
+  cell good : Bool init in { true, false }
+
+  event liquidate by Firm { auth true  bal(Firm, KRW) += 75[KRW] }
+  event recover by Firm { auth true  bal(Firm, KRW) += if good then 80[KRW] else 0[KRW] }
+  event waterfall by Firm {
+    let s = min(50[KRW], bal(Firm, KRW))
+    let j = min(30[KRW], bal(Firm, KRW) - s)
+    move Firm -> Senior : s
+    move Firm -> Junior : j
+  }
+
+  program {
+    choose Firm menu workout {
+      liquidate => { run liquidate }
+      defer     => { at @1 { run recover } }
+    }
+    run waterfall
+  }
+
+  weight chance = if good then pn else 60 - pn
+  value toSenior = at(end, bal(Senior, KRW)) ?? 0[KRW]
+  value toJunior = at(end, bal(Junior, KRW)) ?? 0[KRW]
+
+  query seniorLiquidates = region pn: prefer Senior at menu(workout): liquidate over defer by toSenior under chance  // => {0..59}
+  query juniorDefers     = region pn: prefer Junior at menu(workout): defer over liquidate by toJunior under chance  // => {51..60}
+  query juniorLiquidates = region pn: prefer Junior at menu(workout): liquidate over defer by toJunior under chance  // => {0..49}
+}

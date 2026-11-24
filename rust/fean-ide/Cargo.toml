@@ -1,0 +1,22 @@
+[package]
+name = "fean-ide"
+version.workspace = true
+edition.workspace = true
+description = "FEAN IDE: editor, run loop and history views"
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+
+[[bin]]
+name = "fean-ide"
+path = "src/main.rs"
+
+[dependencies]
+fean-core = { path = "../fean-core" }
+serde_json = "1"
+eframe = { version = "0.33.3", default-features = false, features = ["glow", "default_fonts"] }
+egui = "0.33.3"
+egui_extras = { version = "0.33.3", default-features = false }
+rfd = "0.15"
+image = { version = "0.25", default-features = false, features = ["png"] }

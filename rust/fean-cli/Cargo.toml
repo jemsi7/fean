@@ -1,0 +1,17 @@
+[package]
+name = "fean-cli"
+version.workspace = true
+edition.workspace = true
+description = "FEAN command line"
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+
+[[bin]]
+name = "fean"
+path = "src/main.rs"
+
+[dependencies]
+fean-core = { path = "../fean-core" }
+serde_json = "1"

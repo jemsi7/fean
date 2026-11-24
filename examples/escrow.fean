@@ -1,0 +1,22 @@
+model Escrow {
+  actor B, S
+  asset KRW in 0..3 init B = 3
+  time 0..1
+  cell due  : Qty[KRW] in 0..3 init 2 write pay
+  cell paid : Bool init false write pay
+
+  event pay by B {
+    require bal(B, KRW) >= due
+    move B -> S : due
+    paid := true
+  }
+
+  program { label ready  at @1 { attempt pay { } } }
+
+  query settled = forall run: at(end, paid)                                              // => true
+
+  solve pre   = find at(ready): settled                                                  // => {[due <= bal(B, KRW), due + bal(S, KRW) <= 3], [paid=true, due >= bal(B, KRW) + 1]}
+  solve least = any at(ready) where not paid: settled                                    // => now=@0, due=0, paid=false, bal(B, KRW)=0, bal(S, KRW)=0
+  solve cheap = min bal(B, KRW) at(ready) where due == 2[KRW] and not paid: settled      // => 2[KRW] at now=@0, due=2, paid=false, bal(B, KRW)=2, bal(S, KRW)=0
+  solve full  = any at(ready) where bal(S, KRW) == 3[KRW] and due == 1[KRW] and not paid: settled  // => none
+}

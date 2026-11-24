@@ -1,0 +1,22 @@
+model LoanLifecycle {
+  actor Lender, Debtor, Buyer
+  asset KRW in 0..100 init Lender = 100
+  time 0..4
+
+  def withInterest(p : Qty[KRW], bp : Num) : Qty[KRW] = floor(p * (10000 + bp) / 10000)
+
+  instance c = Loan(Lender, Debtor, KRW, 100[KRW], withInterest(100[KRW], 500), @3)
+
+  program {
+    at @0 { run c.originate }
+    at @1 { run c.repay(60[KRW])  label first }
+    at @2 { run c.assign(Buyer)  run c.repay(40[KRW])  label second }
+    at @3 { attempt c.repay(5[KRW]) { } else { label refused }  run c.close }
+  }
+
+  query afterFirst  = forall run: at(first, bal(Lender, KRW) == 60[KRW] and c.remain == 45[KRW])  // => true
+  query afterSecond = forall run: at(second, bal(Buyer, KRW) == 40[KRW] and c.remain == 5[KRW])   // => true
+  query lastRefused = forall run: reach(refused)                                                  // => true
+  query overdue     = max run: at(end, c.late) ?? 0[KRW]                                          // => 5[KRW]
+  query debtorKnows = forall run: at(end, K(Debtor, c.holder == Buyer))                           // => true
+}

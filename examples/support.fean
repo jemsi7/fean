@@ -1,0 +1,27 @@
+model Support {
+  actor G, F
+  asset KRW in 0..100 init G = 100
+  time 0..0
+  cell aid    : Qty[KRW] in 0..100 init 0     write aidAfter, aidBefore
+  cell unpaid : Bool               init false write aidAfter, aidBefore
+
+  event aidAfter by G {
+    free aid  free unpaid
+    ensure post(aid) == (if post(unpaid) then 100[KRW] else 0[KRW])
+    ensure post(unpaid) == (post(aid) < 100[KRW])
+  }
+  event aidBefore by G {
+    let short = bal(F, KRW) < 100[KRW]
+    free aid  free unpaid
+    ensure post(aid) == (if short then 100[KRW] else 0[KRW])
+    ensure post(unpaid) == (post(aid) < 100[KRW])
+  }
+
+  program {
+    alt { attempt aidAfter { label afterOk } } or { run aidBefore  label beforeOk }
+  }
+
+  query circular = exists run: reach(afterOk)                                 // => false
+  query prior    = exists run: at(beforeOk, aid == 100[KRW] and not unpaid)   // => true
+  query allEnd   = forall run: reach(end)                                     // => false
+}

@@ -1,0 +1,81 @@
+enum Life       { absent, active, settled }
+enum Deal       { open, agreed, delivered }
+enum RightState { unset, live, used, lapsed }
+
+// 매매. 체결(agree)과 결제(settle)를 나누거나 한 번에(spot) 커밋한다.
+contract Sale(seller : Actor, buyer : Actor, x : Asset, q : Qty[x], y : Asset, p : Qty[y]) {
+  cell stage : Deal init open observe seller, buyer
+  event agree by seller, buyer { require stage == open  stage := agreed }
+  event settle by seller {
+    auth stage == agreed
+    move seller -> buyer : q
+    move buyer -> seller : p
+    stage := delivered
+  }
+  event spot by seller, buyer {
+    require stage == open
+    move seller -> buyer : q
+    move buyer -> seller : p
+    stage := delivered
+  }
+}
+
+// 대차. 기존 자금을 빌려주고 약정 채권을 세운다.
+contract Loan(lender : Actor, borrower : Actor, x : Asset, principal : Qty[x], face : Qty[x], due : Time) {
+  cell life   : Life              init absent observe lender, borrower
+  cell remain : Qty[x] in 0..face init 0      observe lender, borrower
+  cell holder : Actor             init lender observe lender, borrower
+  cell late   : Qty[x] in 0..face init 0      observe lender, borrower
+  cell waived : Qty[x] in 0..face init 0      observe lender, borrower
+  event originate by lender {
+    require life == absent
+    require 0[x] < principal and 0[x] < face
+    move lender -> borrower : principal
+    remain := face
+    life := active
+  }
+  event repay(n : Qty[x]) by borrower {
+    require life == active
+    require 0[x] < n and n <= remain
+    move borrower -> holder : n
+    remain -= n
+    life := if n == remain then settled else active
+  }
+  event assign(to : Actor) by holder { require life == active  holder := to }
+  event forgive(n : Qty[x]) by holder {
+    require life == active
+    require 0[x] < n and n <= remain
+    remain -= n
+    waived += n
+    life := if n == remain then settled else active
+  }
+  event close by holder { require life == active  require due <= now  late := remain }
+}
+
+// 권리. 보유자가 기간 안에 상대의 추가 동의 없이 쓴다.
+contract Right(holder : Actor, writer : Actor, from : Time, to : Time) {
+  cell state : RightState init unset observe holder, writer
+  event grant by writer { require state == unset  state := live }
+  event use by holder {
+    require state == live
+    require from <= now and now <= to
+    state := used
+  }
+  event lapse by writer { require state == live  require to < now  state := lapsed }
+}
+
+// 실물 콜. 프리미엄 지급과 권리 설정을 한 묶음으로, 행사와 약정 매매를 한 묶음으로 커밋한다.
+contract Call(holder : Actor, writer : Actor, u : Asset, q : Qty[u], k : Asset, strike : Qty[k],
+              premium : Qty[k], from : Time, to : Time) {
+  instance right = Right(holder, writer, from, to)
+  instance deal  = Sale(writer, holder, u, q, k, strike)
+  event pay by holder { move holder -> writer : premium }
+  batch open     = { pay, right.grant }
+  batch exercise = { right.use, deal.spot }
+  proc decide() {
+    choose holder menu callMenu {
+      exercise => { run batch exercise }
+      pass     => { }
+    }
+  }
+}

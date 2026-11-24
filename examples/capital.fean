@@ -1,0 +1,24 @@
+model Capital {
+  actor I, D, L
+  unknown cap : Num in 0..200
+  asset KRW in 0..200 init I = cap
+  time 0..1
+  cell remain : Qty[KRW] in 0..80 init 80 write collect observe D, L
+
+  event award by I { move I -> D : bal(I, KRW) }
+  event collect by D {
+    let b = min(bal(D, KRW), remain)
+    move D -> L : b
+    remain -= b
+  }
+
+  program { run award  at @1 { run collect } }
+
+  query repaid = forall run: at(end, remain == 0[KRW])       // => {need: true, enough: true, spare: true, short: false}
+  query left   = max run: at(end, bal(D, KRW)) ?? 0[KRW]     // => {need: 0[KRW], enough: 0[KRW], spare: 20[KRW], short: 0[KRW]}
+
+  solve need   = min cap: repaid                             // => 80 at cap=80
+  solve enough = find: repaid                                // => {80..200}
+  solve spare  = any: repaid and left >= 20[KRW]             // => cap=100
+  solve short  = max cap where cap <= 150: not repaid        // => 79 at cap=79
+}

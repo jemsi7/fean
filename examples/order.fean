@@ -1,0 +1,15 @@
+model Order {
+  actor T
+  time 0..0
+  cell cheap  : Bool        init in { true, false }
+  cell bought : Num in 0..2 init 0 write buy
+
+  event buy(n : Num) by T { bought := n }
+
+  program {
+    choose T menu order { bid(n in 0..2) => { run buy(n) } }
+  }
+
+  query lucky  = exists run: at(end, cheap and bought == 2)                                // => true
+  query hedged = can {T}: at(end, (cheap and bought == 2) or (not cheap and bought == 0))   // => false
+}
