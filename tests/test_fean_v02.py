@@ -504,6 +504,32 @@ def bal(state, who, asset='KRW'):
     return state.sig[('bal', who, asset)]
 
 
+def stray_bold(text):
+    """The `**` of a document that would be printed instead of read as bold.
+
+    A mark opens or closes only where the rule of CommonMark lets it: a closing mark that follows a
+    quotation mark and is followed by a letter does not close. Marks are paired in order within a
+    paragraph; fenced blocks and inline code are not text.
+    """
+    import unicodedata
+
+    def mark(char):                      # punctuation as CommonMark counts it: Unicode P* and S*
+        return unicodedata.category(char)[0] in 'PS'
+
+    found = []
+    body = re.sub(r'^```.*?^```[ \t]*$', '', text, flags=re.S | re.M)
+    for paragraph in re.split(r'\n\s*\n', body):
+        flat = re.sub(r'`[^`\n]*`', lambda m: 'x' * len(m.group(0)), paragraph)
+        for k, run in enumerate(re.finditer(r'\*\*', flat)):
+            before = flat[run.start() - 1] if run.start() else ' '
+            after = flat[run.end()] if run.end() < len(flat) else ' '
+            opens = not after.isspace() and (not mark(after) or before.isspace() or mark(before))
+            closes = not before.isspace() and (not mark(before) or after.isspace() or mark(after))
+            if not (closes if k % 2 else opens):
+                found.append(flat[max(0, run.start() - 12): run.end() + 12])
+    return found
+
+
 class Case(unittest.TestCase):
     def reject(self, code, body, run=False, kind=FeanError):
         with self.assertRaises(kind) as caught:
@@ -567,6 +593,12 @@ class TestDocument(Case):
             self.assertNotIn('\\operatorname', text, path.name)
             self.assertEqual([line for line in text.splitlines() if line.strip() == '$$'], [], path.name)
         self.assertEqual(len(doc_blocks(DOC, 'math')), 4)
+        # and bold marks stand where they are read as bold: `**“…”**이다` is printed as it is, `“**…**”이다` is not
+        self.assertEqual(len(stray_bold('질문은 **“지킬 수 있는가?”**이다.')), 1)
+        self.assertEqual(stray_bold('질문은 “**지킬 수 있는가?**”이다. **굵게** 그리고 (**괄호 안**)도.'), [])
+        for path in (DOC, DOC.with_name('financial-language-v0.1.md'), DOC.with_name('engine.md'),
+                     ROOT / 'README.md', ROOT / 'README.en.md'):
+            self.assertEqual(stray_bold(path.read_text(encoding='utf-8')), [], path.name)
         # the design records are kept outside the repository; where they are present, they and the test
         # files name the same tests
         defined = set()
